@@ -8,7 +8,7 @@ use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info}
 use cosmwasm_std::{coin, coins, Addr, Empty, Timestamp, Uint128};
 use cosmwasm_std::{Api, Coin};
 use cw4::Member;
-use cw721::{Cw721QueryMsg, OwnerOfResponse, TokensResponse};
+use cw721::{Cw721QueryMsg, NftInfoResponse, OwnerOfResponse, TokensResponse};
 use cw721_base::ExecuteMsg as Cw721ExecuteMsg;
 use cw_multi_test::{
     next_block, AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg,
@@ -42,6 +42,10 @@ pub const AIRDROP_MINT_PRICE: u128 = 0;
 pub const MINT_FEE_BPS: u64 = 1_000; // 10%
 pub const AIRDROP_MINT_FEE_BPS: u64 = 10_000; // 100%
 pub const MAX_PER_ADDRESS_LIMIT: u32 = 50;
+
+const COLLECTION1_URI: &str = "ipfs://collection1";
+const COLLECTION2_URI: &str = "ipfs://collection2";
+const COLLECTION3_URI: &str = "ipfs://collection3";
 
 fn custom_mock_app() -> StargazeApp {
     StargazeApp::default()
@@ -143,7 +147,7 @@ pub fn mock_params() -> VendingMinterParams {
 
 pub fn mock_init_extension(splits_addr: Option<String>) -> VendingMinterInitMsgExtension {
     VendingMinterInitMsgExtension {
-        base_token_uri: "ipfs://aldkfjads".to_string(),
+        base_token_uri: COLLECTION1_URI.to_string(),
         payment_address: splits_addr,
         start_time: Timestamp::from_nanos(GENESIS_MINT_START_TIME),
         num_tokens: 100,
@@ -2083,7 +2087,7 @@ fn set_token_uri() {
 
     // Set new token uri with uri, num_tokens: 100
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
-        uri: "ipfs://www2".to_string(),
+        uri: COLLECTION2_URI.to_string(),
         num_tokens: 100,
     };
     let res = router.execute_contract(
@@ -2126,7 +2130,7 @@ fn set_token_uri() {
     // round3
     // Set new token uri with uri, num_tokens: 10
     let set_token_uri_msg_2 = ExecuteMsg::SetTokenUri {
-        uri: "ipfs://www3".to_string(),
+        uri: COLLECTION3_URI.to_string(),
         num_tokens: 10,
     };
     let res = router.execute_contract(
@@ -2163,6 +2167,34 @@ fn set_token_uri() {
             .unwrap()
     });
     assert_eq!(vec!["5", "100", "105", "200", "205"], res.tokens);
+
+    // Check uri by token id
+    // round1 - 5th nft to 5 token_id - "ipfs//collection1/5"
+    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "5".to_string()};
+    let res: NftInfoResponse<Option<String>> = router
+        .wrap()
+        .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
+        .unwrap();
+    println!("{:?}", res.token_uri);
+    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION1_URI, "5"));
+
+    // round2 - 5th nft to 105 token_id - "ipfs//collection2/5"
+    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "105".to_string()};
+    let res: NftInfoResponse<Option<String>> = router
+        .wrap()
+        .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
+        .unwrap();
+    println!("{:?}", res.token_uri);
+    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION2_URI, "5"));
+
+    // round3 - 5th nft to 205 token_id - "ipfs//collection3/5"
+    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "205".to_string()};
+    let res: NftInfoResponse<Option<String>> = router
+        .wrap()
+        .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
+        .unwrap();
+    println!("{:?}", res.token_uri);
+    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION3_URI, "5"));
 }
 
 #[test]
