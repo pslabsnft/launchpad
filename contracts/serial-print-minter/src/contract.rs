@@ -5,8 +5,7 @@ use crate::msg::{
 };
 use crate::state::{
     Config, ConfigExtension, BASE_TOKEN_ID, CONFIG, MINTABLE_NUM_TOKENS, MINTABLE_TOKEN_IDS,
-    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS,
-    STATUS,
+    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS, STATUS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -28,7 +27,7 @@ use sg_whitelist::msg::{
 };
 use url::Url;
 
-use ps_lab_factory::msg::{ParamsResponse, VendingMinterCreateMsg};
+use serial_print_factory::msg::{ParamsResponse, VendingMinterCreateMsg};
 
 pub type Response = cosmwasm_std::Response<StargazeMsgWrapper>;
 pub type SubMsg = cosmwasm_std::SubMsg<StargazeMsgWrapper>;
@@ -584,7 +583,7 @@ pub fn execute_set_token_uri(
     }
 
     // Save mintable token ids map
-    for token_id in 1..= num_tokens {
+    for token_id in 1..=num_tokens {
         MINTABLE_TOKEN_IDS.save(deps.storage, token_id, &true)?;
     }
 
