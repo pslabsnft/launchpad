@@ -9,29 +9,29 @@ mod tests {
     use sg721::{CollectionInfo, InstantiateMsg};
     use sg_multi_test::StargazeApp;
     use sg_std::{StargazeMsgWrapper, GENESIS_MINT_START_TIME};
-    use vending_factory::helpers::FactoryContract;
-    use vending_factory::msg::{
+    use ps_lab_factory::helpers::FactoryContract;
+    use ps_lab_factory::msg::{
         ExecuteMsg, InstantiateMsg as FactoryInstantiateMsg, VendingMinterCreateMsg,
         VendingMinterInitMsgExtension,
     };
-    use vending_factory::state::{ParamsExtension, VendingMinterParams};
+    use ps_lab_factory::state::{ParamsExtension, VendingMinterParams};
 
     pub fn factory_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
         let contract = ContractWrapper::new(
-            vending_factory::contract::execute,
-            vending_factory::contract::instantiate,
-            vending_factory::contract::query,
+            ps_lab_factory::contract::execute,
+            ps_lab_factory::contract::instantiate,
+            ps_lab_factory::contract::query,
         );
         Box::new(contract)
     }
 
     pub fn minter_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
         let contract = ContractWrapper::new(
-            vending_minter::contract::execute,
-            vending_minter::contract::instantiate,
-            vending_minter::contract::query,
+            ps_lab_minter::contract::execute,
+            ps_lab_minter::contract::instantiate,
+            ps_lab_minter::contract::query,
         )
-        .with_reply(vending_minter::contract::reply);
+        .with_reply(ps_lab_minter::contract::reply);
         Box::new(contract)
     }
 
@@ -84,7 +84,6 @@ mod tests {
                 max_per_address_limit: MAX_PER_ADDRESS_LIMIT,
                 airdrop_mint_price: coin(AIRDROP_MINT_PRICE, NATIVE_DENOM),
                 airdrop_mint_fee_bps: AIRDROP_MINT_FEE_BPS,
-                shuffle_fee: coin(SHUFFLE_FEE, NATIVE_DENOM),
             },
             max_trading_offset_secs: 60 * 60 * 24 * 7,
         }
@@ -198,7 +197,7 @@ mod tests {
 
         use super::*;
         use crate::msg::QueryMsg;
-        use vending_minter::msg::{ConfigResponse, QueryMsg as VendingMinterQueryMsg};
+        use ps_lab_minter::msg::{ConfigResponse, QueryMsg as VendingMinterQueryMsg};
 
         #[test]
         fn create_sg721_base_collection() {

@@ -19,7 +19,7 @@ use crate::msg::{
 use crate::state::SUDO_PARAMS;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:vending-factory";
+const CONTRACT_NAME: &str = "crates.io:ps-lab-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Can only be called by governance
@@ -145,15 +145,6 @@ pub fn sudo_update_params(
         .extension
         .airdrop_mint_fee_bps
         .unwrap_or(params.extension.airdrop_mint_fee_bps);
-
-    if let Some(shuffle_fee) = param_msg.extension.shuffle_fee {
-        ensure_eq!(
-            &shuffle_fee.denom,
-            &NATIVE_DENOM,
-            ContractError::BaseError(BaseContractError::InvalidDenom {})
-        );
-        params.extension.shuffle_fee = shuffle_fee;
-    }
 
     SUDO_PARAMS.save(deps.storage, &params)?;
 

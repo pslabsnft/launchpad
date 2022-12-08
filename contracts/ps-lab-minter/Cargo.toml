@@ -1,7 +1,10 @@
 [package]
-name        = "vending-factory"
-authors     = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-description = "Stargaze vending minter factory contract"
+name        = "ps-lab-minter"
+authors     = [
+  "Shane Vitarana <s@noreply.publicawesome.com>",
+  "James Zook <jameszook0902@gmail.com>"
+]
+description = "Stargaze PS LAB minter contract"
 version     = { workspace = true }
 edition     = { workspace = true }
 homepage    = { workspace = true }
@@ -25,21 +28,39 @@ backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer:0.12.9
+"""
+
 [dependencies]
-base-factory    = { workspace = true, features = ["library"] }
 cosmwasm-schema = { workspace = true }
-cosmwasm-std    = { workspace = true, features = ["staking"] }
+cosmwasm-std    = { workspace = true }
 cw2             = { workspace = true }
+cw721           = { workspace = true }
+cw721-base      = { workspace = true, features = ["library"] }
 cw-storage-plus = { workspace = true }
 cw-utils        = { workspace = true }
+rand_core       = { version = "0.6.0", default-features = false }
+rand_xoshiro    = { version = "0.6.0", default-features = false }
 schemars        = { workspace = true }
 serde           = { workspace = true }
 sg1             = { workspace = true }
 sg2             = { workspace = true }
+sg4             = { workspace = true }
 sg721           = { workspace = true }
 sg-std          = { workspace = true }
+sg-whitelist    = { workspace = true, features = ["library"] }
 thiserror       = { workspace = true }
+url             = { workspace = true }
+ps-lab-factory = { workspace = true, features = ["library"] }
 
 [dev-dependencies]
+cw4           = { workspace = true }
 cw-multi-test = { workspace = true }
 sg-multi-test = { workspace = true }
+sg721-base    = { workspace = true }
+cw4-group     = { workspace = true }
+sg-splits     = { workspace = true }
