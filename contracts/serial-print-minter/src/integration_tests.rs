@@ -2170,31 +2170,74 @@ fn set_token_uri() {
 
     // Check uri by token id
     // round1 - 5th nft to 5 token_id - "ipfs//collection1/5"
-    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "5".to_string()};
+    let query_nft_info = Cw721QueryMsg::NftInfo {
+        token_id: "5".to_string(),
+    };
     let res: NftInfoResponse<Option<String>> = router
         .wrap()
         .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
         .unwrap();
     println!("{:?}", res.token_uri);
-    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION1_URI, "5"));
+    assert_eq!(
+        res.token_uri.unwrap(),
+        format!("{}/{}", COLLECTION1_URI, "5")
+    );
+
+    // round1 - 100th nft to 100 token_id - "ipfs//collection1/100"
+    let query_nft_info = Cw721QueryMsg::NftInfo {
+        token_id: "100".to_string(),
+    };
+    let res: NftInfoResponse<Option<String>> = router
+        .wrap()
+        .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
+        .unwrap();
+    println!("{:?}", res.token_uri);
+    assert_eq!(
+        res.token_uri.unwrap(),
+        format!("{}/{}", COLLECTION1_URI, "100")
+    );
 
     // round2 - 5th nft to 105 token_id - "ipfs//collection2/5"
-    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "105".to_string()};
+    let query_nft_info = Cw721QueryMsg::NftInfo {
+        token_id: "105".to_string(),
+    };
     let res: NftInfoResponse<Option<String>> = router
         .wrap()
         .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
         .unwrap();
     println!("{:?}", res.token_uri);
-    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION2_URI, "5"));
+    assert_eq!(
+        res.token_uri.unwrap(),
+        format!("{}/{}", COLLECTION2_URI, "5")
+    );
+
+    // round2 - 100th nft to 200 token_id - "ipfs//collection2/100"
+    let query_nft_info = Cw721QueryMsg::NftInfo {
+        token_id: "200".to_string(),
+    };
+    let res: NftInfoResponse<Option<String>> = router
+        .wrap()
+        .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
+        .unwrap();
+    println!("{:?}", res.token_uri);
+    assert_eq!(
+        res.token_uri.unwrap(),
+        format!("{}/{}", COLLECTION2_URI, "100")
+    );
 
     // round3 - 5th nft to 205 token_id - "ipfs//collection3/5"
-    let query_nft_info = Cw721QueryMsg::NftInfo { token_id: "205".to_string()};
+    let query_nft_info = Cw721QueryMsg::NftInfo {
+        token_id: "205".to_string(),
+    };
     let res: NftInfoResponse<Option<String>> = router
         .wrap()
         .query_wasm_smart(config.sg721_address.clone(), &query_nft_info)
         .unwrap();
     println!("{:?}", res.token_uri);
-    assert_eq!(res.token_uri.unwrap(), format!("{}/{}", COLLECTION3_URI, "5"));
+    assert_eq!(
+        res.token_uri.unwrap(),
+        format!("{}/{}", COLLECTION3_URI, "5")
+    );
 }
 
 #[test]
