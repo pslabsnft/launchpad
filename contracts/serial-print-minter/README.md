@@ -37,4 +37,5 @@ base_token_uri=”ipfs://round3”
 num_tokens = 15 = 10 + (minted_num_tokens)
 Mint 5th nft for token_id 205(base_token_id + 5)
 
+# Test
 cargo test -- --nocapture
