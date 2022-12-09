@@ -36,3 +36,5 @@ minted_num_tokens = 5(number of tokens that was minted in round1, round2)
 base_token_uri=”ipfs://round3”
 num_tokens = 15 = 10 + (minted_num_tokens)
 Mint 5th nft for token_id 205(base_token_id + 5)
+
+cargo test -- --nocapture
