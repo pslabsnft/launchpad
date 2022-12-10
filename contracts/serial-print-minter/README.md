@@ -1,4 +1,4 @@
-# Stargaze PS LAB Minter Contract
+# Stargaze Serial Print Minter Contract
 
 A minter that best works for generated art collections. It's designed for collections stored on IPFS that have a base URI root.
 
