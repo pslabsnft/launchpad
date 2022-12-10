@@ -1,4 +1,4 @@
-# Stargaze Serial Print Minter Contract
+# Stargaze Serial Print Factory Contract
 
 A contract that maintains all vending machine minter governance parameters.
 
