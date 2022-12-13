@@ -1,4 +1,4 @@
-# PS LAB Minter Factory
+# Stargaze Serial Print Factory Contract
 
 A contract that maintains all vending machine minter governance parameters.
 

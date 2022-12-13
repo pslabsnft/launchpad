@@ -18,8 +18,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("InvalidNumTokens {max}, min: 1")]
-    InvalidNumTokens { max: u32, min: u32 },
+    #[error("InvalidNumTokens min: 1")]
+    InvalidNumTokens {},
 
     #[error("Invalid minting limit per address. max: {max}, min: 1, got: {got}")]
     InvalidPerAddressLimit { max: u32, min: u32, got: u32 },

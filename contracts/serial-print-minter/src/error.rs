@@ -36,8 +36,8 @@ pub enum ContractError {
     #[error("IncorrectPaymentAmount {0} != {1}")]
     IncorrectPaymentAmount(Coin, Coin),
 
-    #[error("InvalidNumTokens {max}, min: 1")]
-    InvalidNumTokens { max: u32, min: u32 },
+    #[error("InvalidNumTokens min: 1")]
+    InvalidNumTokens { },
 
     #[error("Sold out")]
     SoldOut {},

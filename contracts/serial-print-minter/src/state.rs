@@ -17,7 +17,7 @@ pub type Config = MinterConfig<ConfigExtension>;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const SG721_ADDRESS: Item<Addr> = Item::new("sg721_address");
-// map of index position and token id
+// map of token ids. Bool is just a placeholder
 pub const MINTABLE_TOKEN_IDS: Map<u32, bool> = Map::new("mt");
 pub const MINTABLE_NUM_TOKENS: Item<u32> = Item::new("mintable_num_tokens");
 pub const MINTER_ADDRS: Map<&Addr, u32> = Map::new("ma");
@@ -31,4 +31,3 @@ pub const MINTED_NUM_TOKENS: Item<u32> = Item::new("minted_num_tokens");
 
 /// Set Pause
 pub const MINTING_PAUSED: Item<bool> = Item::new("mintable on/off");
-

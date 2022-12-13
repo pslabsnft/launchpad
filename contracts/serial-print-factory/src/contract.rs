@@ -16,10 +16,10 @@ use crate::msg::{
     ExecuteMsg, InstantiateMsg, ParamsResponse, SudoMsg, VendingMinterCreateMsg,
     VendingUpdateParamsMsg,
 };
-use crate::state::SUDO_PARAMS;
+use crate::state::{SUDO_PARAMS};
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:ps-lab-factory";
+const CONTRACT_NAME: &str = "crates.io:serial-print-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Can only be called by governance
@@ -60,14 +60,12 @@ pub fn execute_create_minter(
     let params = SUDO_PARAMS.load(deps.storage)?;
 
     let mut res = Response::new();
-    checked_fair_burn(&info, params.creation_fee.amount.u128(), None, &mut res)?;
-
-    // Check the number of tokens is more than zero and less than the max limit
-    if msg.init_msg.num_tokens == 0 || msg.init_msg.num_tokens > params.extension.max_token_limit {
-        return Err(ContractError::InvalidNumTokens {
-            min: 1,
-            max: params.extension.max_token_limit,
-        });
+    let creation_fee = params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128);
+    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    
+    // Check the number of tokens is more than zero
+    if msg.init_msg.num_tokens == 0 {
+        return Err(ContractError::InvalidNumTokens { });
     }
 
     // Check per address limit is valid
@@ -123,10 +121,6 @@ pub fn sudo_update_params(
 
     update_params(&mut params, param_msg.clone())?;
 
-    params.extension.max_token_limit = param_msg
-        .extension
-        .max_token_limit
-        .unwrap_or(params.extension.max_token_limit);
     params.extension.max_per_address_limit = param_msg
         .extension
         .max_per_address_limit

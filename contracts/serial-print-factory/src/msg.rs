@@ -31,11 +31,9 @@ pub enum SudoMsg {
 /// Message for params so they can be updated invidiually by governance
 #[cw_serde]
 pub struct VendingUpdateParamsExtension {
-    pub max_token_limit: Option<u32>,
     pub max_per_address_limit: Option<u32>,
     pub airdrop_mint_price: Option<Coin>,
     pub airdrop_mint_fee_bps: Option<u64>,
-    pub shuffle_fee: Option<Coin>,
 }
 pub type VendingUpdateParamsMsg = UpdateMinterParamsMsg<VendingUpdateParamsExtension>;
 
