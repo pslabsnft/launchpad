@@ -165,6 +165,34 @@ pub fn mock_create_minter(splits_addr: Option<String>) -> VendingMinterCreateMsg
     }
 }
 
+// Upload Factory and sg721 and instantiate Factory Contract
+pub fn setup_factory_contract(router: &mut StargazeApp, creator: &Addr) -> (Addr, u64) {
+    let minter_code_id = router.store_code(contract_minter());
+    println!("minter_code_id: {}", minter_code_id);
+
+    let factory_code_id = router.store_code(contract_factory());
+    println!("factory_code_id: {}", factory_code_id);
+
+    let mut params = mock_params();
+    params.code_id = minter_code_id;
+
+    let factory_addr = router
+        .instantiate_contract(
+            factory_code_id,
+            creator.clone(),
+            &serial_print_factory::msg::InstantiateMsg { params },
+            &[],
+            "factory",
+            None,
+        )
+        .unwrap();
+
+    let sg721_code_id = router.store_code(contract_sg721());
+    println!("sg721_code_id: {}", sg721_code_id);
+
+    (factory_addr, sg721_code_id)
+}
+
 // Upload contract code and instantiate minter contract
 fn setup_minter_contract(
     router: &mut StargazeApp,
@@ -2305,6 +2333,115 @@ fn set_pause() {
         minter_addr.clone(),
         &mint_msg,
         &coins(MINT_PRICE, NATIVE_DENOM),
+    );
+    assert!(res.is_ok());
+}
+
+#[test]
+fn dynamic_fee_for_instantiate() {
+    let mut router = custom_mock_app();
+    let num_tokens: u32 = 100;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
+
+    let (factory_addr, sg721_code_id) = setup_factory_contract(&mut router, &creator);
+
+    let mut msg = mock_create_minter(None);
+    msg.init_msg.mint_price = coin(MINT_PRICE, NATIVE_DENOM);
+    msg.collection_params.code_id = sg721_code_id;
+    msg.collection_params.info.creator = creator.to_string();
+
+    // Fail with num_tokens 0
+    msg.init_msg.num_tokens = 0;
+    let minter_msg = Sg2ExecuteMsg::CreateMinter(msg.clone());
+    let res = router.execute_contract(
+        creator.clone(),
+        factory_addr.clone(),
+        &minter_msg,
+        &coins(0, NATIVE_DENOM),
+    );
+    assert!(res.is_err());
+
+    //
+    msg.init_msg.num_tokens = num_tokens;
+    let minter_msg = Sg2ExecuteMsg::CreateMinter(msg.clone());
+
+    // Fail with the insufficient creation_fee
+    let err = router
+        .execute_contract(
+            creator.clone(),
+            factory_addr.clone(),
+            &minter_msg,
+            &coins(990_000, NATIVE_DENOM),
+        )
+        .unwrap_err();
+
+    assert_eq!(
+        sg1::FeeError::InsufficientFee(1_000_000, 990_000).to_string(),
+        err.source().unwrap().to_string()
+    );
+
+    // Success with creation_fee for num_tokens
+    let res = router.execute_contract(
+        creator.clone(),
+        factory_addr.clone(),
+        &minter_msg,
+        &coins(CREATION_FEE_PER_TOKEN * (num_tokens as u128), NATIVE_DENOM),
+    );
+    assert!(res.is_ok());
+}
+
+#[test]
+fn dynamic_fee_for_set_new_uri() {
+    let mut router = custom_mock_app();
+    let num_tokens = 100;
+    let (creator, _buyer) = setup_accounts(&mut router, num_tokens);
+
+    let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
+
+    // round2
+    // Fail with the token num 0
+    let set_token_uri_msg = ExecuteMsg::SetTokenUri {
+        uri: COLLECTION1_URI.to_string(),
+        num_tokens: 0,
+    };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &set_token_uri_msg,
+        &coins(0, NATIVE_DENOM),
+    );
+
+    assert!(res.is_err());
+
+    // Fail with the insufficient creation_fee
+    let set_token_uri_msg = ExecuteMsg::SetTokenUri {
+        uri: COLLECTION1_URI.to_string(),
+        num_tokens,
+    };
+    let err = router
+        .execute_contract(
+            creator.clone(),
+            minter_addr.clone(),
+            &set_token_uri_msg,
+            &coins(990_000, NATIVE_DENOM),
+        )
+        .unwrap_err();
+
+    assert_eq!(
+        sg1::FeeError::InsufficientFee(1_000_000, 990_000).to_string(),
+        err.source().unwrap().to_string()
+    );
+
+    // Success with creation_fee for num_tokens
+    let set_token_uri_msg = ExecuteMsg::SetTokenUri {
+        uri: COLLECTION1_URI.to_string(),
+        num_tokens,
+    };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &set_token_uri_msg,
+        &coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM),
     );
     assert!(res.is_ok());
 }
