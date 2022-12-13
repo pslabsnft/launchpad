@@ -2,7 +2,9 @@
 
 A minter that best works for generated art collections. It's designed for collections stored on IPFS that have a base URI root.
 
-base_token_id, minted_num_tokens are the states of the previous round.
+- Pay the creation fee - num_tokens * creation_fee_per_token at setting a new uri
+
+- base_token_id, minted_num_tokens are the states of the previous round.
 
 base_token_id:  
  To avoid the conflicts of token id, token id should be calculated

@@ -10,6 +10,7 @@ repository = "https://github.com/public-awesome/launchpad"
 license    = "Apache-2.0"
 
 [workspace.dependencies]
+base-factory      = { version = "0.21.1", path = "contracts/base-factory" }
 cosmwasm-schema   = "1.1.5"
 cosmwasm-std      = "1.1.5"
 cw2               = "0.16.0"
@@ -34,7 +35,6 @@ sg-std            = "0.21.1"
 sg-whitelist      = { version = "0.21.1", path = "contracts/whitelist" }
 thiserror         = "1.0.31"
 url               = "2.2.2"
-base-factory      = { version = "0.21.1", path = "contracts/base-factory" }
 serial-print-factory = { version = "0.21.1", path = "contracts/serial-print-factory" }
 
 [profile.release.package.sg721]
