@@ -559,6 +559,20 @@ pub fn execute_set_token_uri(
         ));
     }
 
+    // Calcuate the creation fee for num_tokens and fair burn
+    let mut res = Response::new();
+    let factory: ParamsResponse = deps
+        .querier
+        .query_wasm_smart(config.factory.clone(), &Sg2QueryMsg::Params {})?;
+    let factory_params = factory.params;
+
+    let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
+    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+
+    if num_tokens == 0 {
+        return Err(ContractError::InvalidNumTokens { })
+    }
+
     let mut base_token_uri = uri.trim().to_string();
     // Check that base_token_uri is a valid IPFS uri
     let parsed_token_uri = Url::parse(&base_token_uri)?;
@@ -597,7 +611,10 @@ pub fn execute_set_token_uri(
     MINTABLE_NUM_TOKENS.save(deps.storage, &num_tokens)?;
     MINTED_NUM_TOKENS.save(deps.storage, &minted_num_tokens)?;
 
-    Ok(Response::default())
+    Ok(res
+        .add_attribute("action", "set new uri")
+        .add_attribute("num_token", num_tokens.to_string())
+        .add_attribute("creation_fee", creation_fee.to_string()))
 }
 
 pub fn execute_set_minting_pause(

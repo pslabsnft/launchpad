@@ -81,7 +81,7 @@ mod tests {
             min_mint_price: coin(MIN_MINT_PRICE, NATIVE_DENOM),
             mint_fee_bps: MINT_FEE_BPS,
             extension: ParamsExtension {
-                max_token_limit: MAX_TOKEN_LIMIT,
+                creation_fee_per_token: 100000,
                 max_per_address_limit: MAX_PER_ADDRESS_LIMIT,
                 airdrop_mint_price: coin(AIRDROP_MINT_PRICE, NATIVE_DENOM),
                 airdrop_mint_fee_bps: AIRDROP_MINT_FEE_BPS,

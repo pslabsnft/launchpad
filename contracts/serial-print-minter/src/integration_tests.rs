@@ -27,7 +27,8 @@ use sg_whitelist::msg::{
     QueryMsg as WhitelistQueryMsg,
 };
 
-const CREATION_FEE: u128 = 5_000_000_000;
+const CREATION_FEE: u128 = 0;
+const CREATION_FEE_PER_TOKEN: u128 = 10_000;
 const INITIAL_BALANCE: u128 = 2_000_000_000;
 
 const MINT_PRICE: u128 = 100_000_000;
@@ -137,7 +138,7 @@ pub fn mock_params() -> VendingMinterParams {
         mint_fee_bps: MINT_FEE_BPS,
         max_trading_offset_secs: 60 * 60 * 24 * 7,
         extension: ParamsExtension {
-            max_token_limit: MAX_TOKEN_LIMIT,
+            creation_fee_per_token: CREATION_FEE_PER_TOKEN,
             max_per_address_limit: MAX_PER_ADDRESS_LIMIT,
             airdrop_mint_price: coin(AIRDROP_MINT_PRICE, NATIVE_DENOM),
             airdrop_mint_fee_bps: AIRDROP_MINT_FEE_BPS,
@@ -173,7 +174,7 @@ fn setup_minter_contract(
 ) -> (Addr, ConfigResponse) {
     let minter_code_id = router.store_code(contract_minter());
     println!("minter_code_id: {}", minter_code_id);
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * (num_tokens as u128), NATIVE_DENOM);
 
     let factory_code_id = router.store_code(contract_factory());
     println!("factory_code_id: {}", factory_code_id);
@@ -225,7 +226,7 @@ fn setup_minter_contract_with_splits(
 ) -> (Addr, ConfigResponse) {
     let minter_code_id = router.store_code(contract_minter());
     println!("minter_code_id: {}", minter_code_id);
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
 
     let factory_code_id = router.store_code(contract_factory());
     println!("factory_code_id: {}", factory_code_id);
@@ -329,11 +330,14 @@ fn setup_splits_test_case(app: &mut StargazeApp, init_funds: Vec<Coin>) -> (Addr
 }
 
 // Add a creator account with initial balances
-fn setup_accounts(router: &mut StargazeApp) -> (Addr, Addr) {
+fn setup_accounts(router: &mut StargazeApp, num_tokens: u32) -> (Addr, Addr) {
     let buyer = Addr::unchecked("buyer");
     let creator = Addr::unchecked("creator");
     // 3,000 tokens
-    let creator_funds = coins(INITIAL_BALANCE + CREATION_FEE, NATIVE_DENOM);
+    let creator_funds = coins(
+        INITIAL_BALANCE + CREATION_FEE_PER_TOKEN * num_tokens as u128,
+        NATIVE_DENOM,
+    );
     // 2,000 tokens
     let buyer_funds = coins(INITIAL_BALANCE, NATIVE_DENOM);
     router
@@ -448,8 +452,9 @@ fn initialization() {
 fn happy_path() {
     let mut router = custom_mock_app();
     setup_block_time(&mut router, GENESIS_MINT_START_TIME - 1, None);
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 2;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
+
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Default start time genesis mint time
@@ -627,11 +632,11 @@ fn happy_path() {
 
 fn invalid_whitelist_instantiate() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
-
     let num_tokens = 10;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
+
     let minter_code_id = router.store_code(contract_minter());
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
     let factory_code_id = router.store_code(contract_factory());
 
     let mut params = mock_params();
@@ -671,8 +676,8 @@ fn invalid_whitelist_instantiate() {
 #[test]
 fn set_invalid_whitelist() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
     let num_tokens = 10;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
     let whitelist_addr = setup_whitelist_contract(&mut router, &creator);
     const EXPIRATION_TIME: Timestamp = Timestamp::from_nanos(GENESIS_MINT_START_TIME + 10_000);
@@ -737,8 +742,8 @@ fn set_invalid_whitelist() {
 #[test]
 fn mint_count_query() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 10;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
     let sg721_addr = Addr::unchecked(config.sg721_address);
     let whitelist_addr = setup_whitelist_contract(&mut router, &creator);
@@ -934,8 +939,8 @@ fn mint_count_query() {
 #[test]
 fn whitelist_already_started() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
     let whitelist_addr = setup_whitelist_contract(&mut router, &creator);
 
@@ -958,8 +963,8 @@ fn whitelist_already_started() {
 #[test]
 fn whitelist_can_update_before_start() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
     let whitelist_addr = setup_whitelist_contract(&mut router, &creator);
 
@@ -987,8 +992,8 @@ fn whitelist_can_update_before_start() {
 #[test]
 fn whitelist_access_len_add_remove_expiration() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
     let sg721_addr = config.sg721_address;
     let whitelist_addr = setup_whitelist_contract(&mut router, &creator);
@@ -1147,8 +1152,8 @@ fn whitelist_access_len_add_remove_expiration() {
 #[test]
 fn before_start_time() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Set to before genesis mint start time
@@ -1201,8 +1206,8 @@ fn before_start_time() {
 #[test]
 fn check_per_address_limit() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 2;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Set to genesis mint start time
@@ -1282,13 +1287,13 @@ fn check_per_address_limit() {
 fn check_dynamic_per_address_limit() {
     let mut router = custom_mock_app();
     setup_block_time(&mut router, GENESIS_MINT_START_TIME - 1, None);
-    let (creator, _) = setup_accounts(&mut router);
 
     // if per address limit > 1%, throw error when instantiating
     // num_tokens: 400, per_address_limit: 5
     let num_tokens = 400;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
     let minter_code_id = router.store_code(contract_minter());
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
 
     let factory_code_id = router.store_code(contract_factory());
 
@@ -1332,6 +1337,7 @@ fn check_dynamic_per_address_limit() {
 
     // should succeed with 1000 tokens and 5 per_address_limit
     let num_tokens = 1000;
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
     let mut msg = mock_create_minter(None);
     msg.init_msg.mint_price = coin(MINT_PRICE, NATIVE_DENOM);
     msg.init_msg.num_tokens = num_tokens;
@@ -1364,8 +1370,8 @@ fn check_dynamic_per_address_limit() {
 #[test]
 fn mint_for_token_id_addr() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 4;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Set to genesis mint start time
@@ -1535,8 +1541,8 @@ fn mint_for_token_id_addr() {
 #[test]
 fn test_update_start_time() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
     let num_tokens = 10;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
 
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
@@ -1557,12 +1563,12 @@ fn test_update_start_time() {
 #[test]
 fn test_invalid_start_time() {
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
+    let num_tokens = 10;
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
 
     // Upload contract code
     let sg721_code_id = router.store_code(contract_sg721());
     let minter_code_id = router.store_code(contract_minter());
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
 
     let factory_code_id = router.store_code(contract_factory());
 
@@ -1586,10 +1592,15 @@ fn test_invalid_start_time() {
     // Instantiate sale contract before genesis mint
     // let mut minter_init_msg = minter_init();
     let mut minter_msg = mock_create_minter(None);
-    minter_msg.init_msg.num_tokens = 10;
+    minter_msg.init_msg.num_tokens = num_tokens;
     minter_msg.collection_params.code_id = sg721_code_id;
     minter_msg.init_msg.start_time = Timestamp::from_nanos(GENESIS_MINT_START_TIME - 100);
     let msg = Sg2ExecuteMsg::CreateMinter(minter_msg.clone());
+
+    let creation_fee = coins(
+        CREATION_FEE_PER_TOKEN * minter_msg.init_msg.num_tokens as u128,
+        NATIVE_DENOM,
+    );
 
     router
         .execute_contract(creator.clone(), factory_addr.clone(), &msg, &creation_fee)
@@ -1645,11 +1656,11 @@ fn test_invalid_start_time() {
 fn invalid_trading_time_during_init() {
     let num_tokens = 10;
     let mut router = custom_mock_app();
-    let (creator, _) = setup_accounts(&mut router);
+    let (creator, _) = setup_accounts(&mut router, num_tokens);
 
     let minter_code_id = router.store_code(contract_minter());
     println!("minter_code_id: {}", minter_code_id);
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
 
     let factory_code_id = router.store_code(contract_factory());
     println!("factory_code_id: {}", factory_code_id);
@@ -1702,8 +1713,8 @@ fn invalid_trading_time_during_init() {
 #[test]
 fn update_start_trading_time() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 2;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     setup_block_time(&mut router, GENESIS_MINT_START_TIME - 1, None);
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
@@ -1767,8 +1778,8 @@ fn update_start_trading_time() {
 #[test]
 fn unhappy_path() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Fails if too little funds are sent
@@ -1800,8 +1811,8 @@ fn unhappy_path() {
 #[test]
 fn update_mint_price() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 1;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Set to before genesis mint start time
@@ -1874,8 +1885,8 @@ fn mint_and_split() {
 
     let (splits_addr, _) = setup_splits_test_case(&mut app, vec![]);
 
-    let (creator, buyer) = setup_accounts(&mut app);
     let num_tokens = 2;
+    let (creator, buyer) = setup_accounts(&mut app, num_tokens);
     let (minter_addr, _) = setup_minter_contract_with_splits(
         &mut app,
         &creator,
@@ -1911,8 +1922,8 @@ fn mint_and_split() {
 fn burn_remaining() {
     let mut router = custom_mock_app();
     setup_block_time(&mut router, GENESIS_MINT_START_TIME - 1, None);
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 5000;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // Default start time genesis mint time
@@ -2046,9 +2057,9 @@ fn get_token_id(res: &AppResponse) -> u32 {
 #[test]
 fn set_token_uri() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
-
     let num_tokens = 100;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
+
     let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // position block time before the start time
@@ -2072,29 +2083,32 @@ fn set_token_uri() {
     assert_eq!(100, get_token_id(&res.unwrap()));
 
     // round2
+    let num_tokens = 100;
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
+
     // Set new token uri fail, invalid uri
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
         uri: "test uri".to_string(),
-        num_tokens: 100,
+        num_tokens,
     };
     let res = router.execute_contract(
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg,
-        &[],
+        &creation_fee,
     );
     assert!(res.is_err());
 
     // Set new token uri with uri, num_tokens: 100
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
         uri: COLLECTION2_URI.to_string(),
-        num_tokens: 100,
+        num_tokens,
     };
     let res = router.execute_contract(
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg,
-        &[],
+        &creation_fee,
     );
     assert!(res.is_ok());
 
@@ -2128,16 +2142,18 @@ fn set_token_uri() {
     );
 
     // round3
+    let num_tokens = 10;
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
     // Set new token uri with uri, num_tokens: 10
     let set_token_uri_msg_2 = ExecuteMsg::SetTokenUri {
         uri: COLLECTION3_URI.to_string(),
-        num_tokens: 10,
+        num_tokens: num_tokens,
     };
     let res = router.execute_contract(
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg_2,
-        &[],
+        &creation_fee,
     );
     assert!(res.is_ok());
 
@@ -2243,8 +2259,8 @@ fn set_token_uri() {
 #[test]
 fn set_pause() {
     let mut router = custom_mock_app();
-    let (creator, buyer) = setup_accounts(&mut router);
     let num_tokens = 1000;
+    let (creator, buyer) = setup_accounts(&mut router, num_tokens);
     let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // position block time before the start time
