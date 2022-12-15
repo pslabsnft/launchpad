@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::msg::{InstantiateMsg, VendingMinterCreateMsg};
+    use crate::msg::InstantiateMsg;
     use crate::state::ParamsExtension;
     use crate::{helpers::FactoryContract, state::VendingMinterParams};
     use cosmwasm_std::{coin, Addr};

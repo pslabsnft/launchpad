@@ -16,7 +16,7 @@ use crate::msg::{
     ExecuteMsg, InstantiateMsg, ParamsResponse, SudoMsg, VendingMinterCreateMsg,
     VendingUpdateParamsMsg,
 };
-use crate::state::{SUDO_PARAMS};
+use crate::state::SUDO_PARAMS;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:serial-print-factory";
@@ -62,10 +62,10 @@ pub fn execute_create_minter(
     let mut res = Response::new();
     let creation_fee = params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128);
     checked_fair_burn(&info, creation_fee, None, &mut res)?;
-    
+
     // Check the number of tokens is more than zero
     if msg.init_msg.num_tokens == 0 {
-        return Err(ContractError::InvalidNumTokens { });
+        return Err(ContractError::InvalidNumTokens {});
     }
 
     // Check per address limit is valid
@@ -121,6 +121,11 @@ pub fn sudo_update_params(
 
     update_params(&mut params, param_msg.clone())?;
 
+    params.extension.creation_fee_per_token = param_msg
+        .extension
+        .creation_fee_per_token
+        .unwrap_or(params.extension.creation_fee_per_token);
+        
     params.extension.max_per_address_limit = param_msg
         .extension
         .max_per_address_limit

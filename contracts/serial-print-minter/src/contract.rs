@@ -570,7 +570,7 @@ pub fn execute_set_token_uri(
     checked_fair_burn(&info, creation_fee, None, &mut res)?;
 
     if num_tokens == 0 {
-        return Err(ContractError::InvalidNumTokens { })
+        return Err(ContractError::InvalidNumTokens {});
     }
 
     let mut base_token_uri = uri.trim().to_string();
@@ -611,10 +611,12 @@ pub fn execute_set_token_uri(
     MINTABLE_NUM_TOKENS.save(deps.storage, &num_tokens)?;
     MINTED_NUM_TOKENS.save(deps.storage, &minted_num_tokens)?;
 
-    Ok(res
-        .add_attribute("action", "set new uri")
-        .add_attribute("num_token", num_tokens.to_string())
-        .add_attribute("creation_fee", creation_fee.to_string()))
+    let event = Event::new("set-new-uri")
+        .add_attribute("sender", info.sender)
+        .add_attribute("num_tokens", num_tokens.to_string())
+        .add_attribute("creation_fee", creation_fee.to_string());
+
+    Ok(res.add_event(event))
 }
 
 pub fn execute_set_minting_pause(
