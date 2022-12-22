@@ -559,6 +559,10 @@ pub fn execute_set_token_uri(
         ));
     }
 
+    if num_tokens == 0 {
+        return Err(ContractError::InvalidNumTokens {});
+    }
+
     // Calcuate the creation fee for num_tokens and fair burn
     let mut res = Response::new();
     let factory: ParamsResponse = deps
@@ -566,11 +570,9 @@ pub fn execute_set_token_uri(
         .query_wasm_smart(config.factory.clone(), &Sg2QueryMsg::Params {})?;
     let factory_params = factory.params;
 
-    let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
-    checked_fair_burn(&info, creation_fee, None, &mut res)?;
-
-    if num_tokens == 0 {
-        return Err(ContractError::InvalidNumTokens {});
+    if num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
+        let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
+        checked_fair_burn(&info, creation_fee, None, &mut res)?;
     }
 
     let mut base_token_uri = uri.trim().to_string();
@@ -613,8 +615,7 @@ pub fn execute_set_token_uri(
 
     let event = Event::new("set-new-uri")
         .add_attribute("sender", info.sender)
-        .add_attribute("num_tokens", num_tokens.to_string())
-        .add_attribute("creation_fee", creation_fee.to_string());
+        .add_attribute("num_tokens", num_tokens.to_string());
 
     Ok(res.add_event(event))
 }

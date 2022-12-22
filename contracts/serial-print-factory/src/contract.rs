@@ -60,7 +60,12 @@ pub fn execute_create_minter(
     let params = SUDO_PARAMS.load(deps.storage)?;
 
     let mut res = Response::new();
-    let creation_fee = params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128);
+    let creation_fee;
+    if msg.init_msg.num_tokens > params.extension.dynamic_creation_fee_threshold {
+        creation_fee = params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128);
+    } else {
+        creation_fee = params.creation_fee.amount.u128();
+    }
     checked_fair_burn(&info, creation_fee, None, &mut res)?;
 
     // Check the number of tokens is more than zero
@@ -121,11 +126,16 @@ pub fn sudo_update_params(
 
     update_params(&mut params, param_msg.clone())?;
 
+    params.extension.dynamic_creation_fee_threshold = param_msg
+        .extension
+        .dynamic_creation_fee_threshold
+        .unwrap_or(params.extension.dynamic_creation_fee_threshold);
+
     params.extension.creation_fee_per_token = param_msg
         .extension
         .creation_fee_per_token
         .unwrap_or(params.extension.creation_fee_per_token);
-        
+
     params.extension.max_per_address_limit = param_msg
         .extension
         .max_per_address_limit

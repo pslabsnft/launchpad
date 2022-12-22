@@ -31,6 +31,7 @@ pub enum SudoMsg {
 /// Message for params so they can be updated invidiually by governance
 #[cw_serde]
 pub struct VendingUpdateParamsExtension {
+    pub dynamic_creation_fee_threshold: Option<u32>,
     pub creation_fee_per_token: Option<u128>,
     pub max_per_address_limit: Option<u32>,
     pub airdrop_mint_price: Option<Coin>,
