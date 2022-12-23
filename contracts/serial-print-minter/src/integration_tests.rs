@@ -2319,7 +2319,7 @@ fn set_pause() {
     let res = router.execute_contract(creator.clone(), minter_addr.clone(), &set_mintable_msg, &[]);
     assert!(res.is_ok());
 
-    // When paused, Can't mint
+    // When paused, Can't mint for user
     let res = router.execute_contract(
         buyer.clone(),
         minter_addr.clone(),
@@ -2328,17 +2328,55 @@ fn set_pause() {
     );
     assert!(res.is_err());
 
+    // When paused, Can mint for admin
+    let admin_mint_msg = ExecuteMsg::MintTo { recipient: buyer.clone().to_string() };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &admin_mint_msg,
+        &[],
+    );
+    assert!(res.is_ok());
+    
+    let admin_mint_msg = ExecuteMsg::MintFor { token_id: 5, recipient: buyer.clone().to_string() };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &admin_mint_msg,
+        &[],
+    );
+    assert!(res.is_ok());
+
     // Unpause minting
     let set_mintable_msg = ExecuteMsg::SetMintingPause { pause: false };
     let res = router.execute_contract(creator.clone(), minter_addr.clone(), &set_mintable_msg, &[]);
     assert!(res.is_ok());
 
-    // Can mint
+    // Can mint for user
     let res = router.execute_contract(
         buyer.clone(),
         minter_addr.clone(),
         &mint_msg,
         &coins(MINT_PRICE, NATIVE_DENOM),
+    );
+    assert!(res.is_ok());
+
+    // When unpaused, Can mint for admin
+    let admin_mint_msg = ExecuteMsg::MintTo { recipient: buyer.clone().to_string() };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &admin_mint_msg,
+        &[],
+    );
+    assert!(res.is_ok());
+    
+    let admin_mint_msg = ExecuteMsg::MintFor { token_id: 7, recipient: buyer.clone().to_string() };
+    let res = router.execute_contract(
+        creator.clone(),
+        minter_addr.clone(),
+        &admin_mint_msg,
+        &[],
     );
     assert!(res.is_ok());
 }
