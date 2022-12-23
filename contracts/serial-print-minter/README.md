@@ -74,7 +74,9 @@ A minter that best works for generated art collections. It's designed for collec
     
  - set minting_pause by owner
     
-      mintable on/off by owner.
+    pause/unpause minting by user
+
+    setable by admin
       
 # Test
 cargo test -- --nocapture
