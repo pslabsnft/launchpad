@@ -300,6 +300,12 @@ pub fn execute_mint_sender(
     let config = CONFIG.load(deps.storage)?;
     let action = "mint_sender";
 
+    // Check mintable
+    let minting_paused = MINTING_PAUSED.load(deps.storage)?;
+    if minting_paused == true {
+        return Err(ContractError::MintingPaused {});
+    }
+    
     // If there is no active whitelist right now, check public mint
     // Check if after start_time
     if is_public_mint(deps.as_ref(), &info)? && (env.block.time < config.extension.start_time) {
@@ -418,11 +424,6 @@ fn _execute_mint(
     recipient: Option<Addr>,
     token_id: Option<u32>,
 ) -> Result<Response, ContractError> {
-    // Check mintable
-    let minting_paused = MINTING_PAUSED.load(deps.storage)?;
-    if minting_paused == true {
-        return Err(ContractError::MintingPaused {});
-    }
 
     let mintable_num_tokens = MINTABLE_NUM_TOKENS.load(deps.storage)?;
     if mintable_num_tokens == 0 {
