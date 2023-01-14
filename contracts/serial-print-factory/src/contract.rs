@@ -60,11 +60,13 @@ pub fn execute_create_minter(
     let params = SUDO_PARAMS.load(deps.storage)?;
 
     let mut res = Response::new();
-    let creation_fee: u128 = if msg.init_msg.num_tokens > params.extension.dynamic_creation_fee_threshold {
-        params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128)
-    } else {
-        params.creation_fee.amount.u128()
-    }
+    let creation_fee: u128 =
+        if msg.init_msg.num_tokens > params.extension.dynamic_creation_fee_threshold {
+            params.extension.creation_fee_per_token * (msg.init_msg.num_tokens as u128)
+        } else {
+            params.creation_fee.amount.u128()
+        };
+
     checked_fair_burn(&info, creation_fee, None, &mut res)?;
 
     // Check the number of tokens is more than zero
