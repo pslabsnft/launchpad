@@ -5,7 +5,7 @@ use crate::msg::{
 };
 use crate::state::{
     Config, ConfigExtension, BASE_TOKEN_ID, CONFIG, MINTABLE_NUM_TOKENS, MINTABLE_TOKEN_IDS,
-    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS, STATUS,
+    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS, STATUS, ACC_NUM_TOKENS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -177,6 +177,8 @@ pub fn instantiate(
 
     BASE_TOKEN_ID.save(deps.storage, &0)?;
     MINTED_NUM_TOKENS.save(deps.storage, &0)?;
+    ACC_NUM_TOKENS.save(deps.storage, &msg.init_msg.num_tokens)?;
+
     MINTING_PAUSED.save(deps.storage, &false)?;
 
     Ok(Response::new()
@@ -571,10 +573,18 @@ pub fn execute_set_token_uri(
         .query_wasm_smart(config.factory.clone(), &Sg2QueryMsg::Params {})?;
     let factory_params = factory.params;
 
-    if num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
-        let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
-        checked_fair_burn(&info, creation_fee, None, &mut res)?;
-    }
+    let mut acc_num_tokens = ACC_NUM_TOKENS.load(deps.storage)?;
+    let creation_fee: u128 =
+        if acc_num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
+            factory_params.extension.creation_fee_per_token * (num_tokens as u128)
+        } else {
+            factory_params.creation_fee.amount.u128()
+        };
+
+    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    
+    acc_num_tokens += num_tokens;
+    ACC_NUM_TOKENS.save(deps.storage, &acc_num_tokens)?;
 
     let mut base_token_uri = uri.trim().to_string();
     // Check that base_token_uri is a valid IPFS uri

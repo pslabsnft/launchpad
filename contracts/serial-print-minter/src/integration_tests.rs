@@ -2118,7 +2118,7 @@ fn set_token_uri() {
 
     // round2
     let num_tokens = 100;
-    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
 
     // Set new token uri fail, invalid uri
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
@@ -2177,7 +2177,7 @@ fn set_token_uri() {
 
     // round3
     let num_tokens = 10;
-    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
     // Set new token uri with uri, num_tokens: 10
     let set_token_uri_msg_2 = ExecuteMsg::SetTokenUri {
         uri: COLLECTION3_URI.to_string(),
@@ -2437,9 +2437,10 @@ fn dynamic_fee_for_instantiate() {
 #[test]
 fn dynamic_fee_for_set_new_uri() {
     let mut router = custom_mock_app();
-    let num_tokens = 100;
+    let num_tokens = 9_000;//now threshold is 10k
     let (creator, _buyer) = setup_accounts(&mut router, num_tokens);
 
+    //round1 with num_tokens 9k
     let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
 
     // round2
@@ -2457,7 +2458,10 @@ fn dynamic_fee_for_set_new_uri() {
 
     assert!(res.is_err());
 
-    // Success with the creation_fee = 0
+    let num_tokens = 2_000;
+    //round2 with num_tokens 2k
+    // Success with the creation_fee = 1k Stars 
+    // because accumulated number of tokens is 9k
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
         uri: COLLECTION1_URI.to_string(),
         num_tokens,
@@ -2466,12 +2470,14 @@ fn dynamic_fee_for_set_new_uri() {
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg,
-        &[],
+        &coins(CREATION_FEE, NATIVE_DENOM),
     );
     assert!(res.is_ok());
 
     let num_tokens = 20_000;
-    // Success with creation_fee for num_tokens
+    //round3 with num_tokens 20k
+    // Success with creation_fee = 0.01stars * 20k = 200 stars
+    //because accumulated number of tokens for round1, round2 is 11k, exceeds the threshold
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
         uri: COLLECTION1_URI.to_string(),
         num_tokens,
@@ -2480,7 +2486,7 @@ fn dynamic_fee_for_set_new_uri() {
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg,
-        &coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM),
+        &coins(200_000_000, NATIVE_DENOM),
     );
     assert!(res.is_ok());
 }

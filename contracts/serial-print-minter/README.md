@@ -4,17 +4,11 @@ A minter that best works for generated art collections. It's designed for collec
 
 - Pay the creation fee 
 
-  at creating minter, 
+      acc = accumulated number of tokens
 
-      if num_tokens > 10k, creation_fee = num_tokens * creation_fee_per_token(stars)
+      if acc > 10k, creation_fee = num_tokens * creation_fee_per_token(stars)
 
-      if num_tokens <=10k, creation_fee = 1k(stars)
-
-  at appending a new uri
-
-      if num_tokens > 10k, creation_fee = num_tokens * creation_fee_per_token(stars)
-
-      if num_tokens <=10k, creation_fee = 0(stars)
+      if acc <= 10k, creation_fee = 1k(stars)
 
 - Appending a new uri 
 

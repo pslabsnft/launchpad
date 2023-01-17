@@ -28,6 +28,7 @@ pub const STATUS: Item<Status> = Item::new("status");
 /// Set New URI
 pub const BASE_TOKEN_ID: Item<u32> = Item::new("base_token_id");
 pub const MINTED_NUM_TOKENS: Item<u32> = Item::new("minted_num_tokens");
+pub const ACC_NUM_TOKENS: Item<u32> = Item::new("accumulated number of tokens");
 
 /// Set Pause
 pub const MINTING_PAUSED: Item<bool> = Item::new("mintable on/off");
