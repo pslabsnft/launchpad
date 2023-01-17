@@ -305,7 +305,7 @@ pub fn execute_mint_sender(
     if minting_paused == true {
         return Err(ContractError::MintingPaused {});
     }
-
+    
     // If there is no active whitelist right now, check public mint
     // Check if after start_time
     if is_public_mint(deps.as_ref(), &info)? && (env.block.time < config.extension.start_time) {
@@ -424,6 +424,7 @@ fn _execute_mint(
     recipient: Option<Addr>,
     token_id: Option<u32>,
 ) -> Result<Response, ContractError> {
+
     let mintable_num_tokens = MINTABLE_NUM_TOKENS.load(deps.storage)?;
     if mintable_num_tokens == 0 {
         return Err(ContractError::SoldOut {});
@@ -570,18 +571,10 @@ pub fn execute_set_token_uri(
         .query_wasm_smart(config.factory.clone(), &Sg2QueryMsg::Params {})?;
     let factory_params = factory.params;
 
-    let base_token_id = BASE_TOKEN_ID.load(deps.storage)?;
-    let minted_num_tokens = MINTED_NUM_TOKENS.load(deps.storage)?;
-    let acc_mintable_num_tokens = base_token_id + config.extension.num_tokens - minted_num_tokens;
-
-    let creation_fee: u128 =
-        if acc_mintable_num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
-            factory_params.extension.creation_fee_per_token * (num_tokens as u128)
-        } else {
-            factory_params.creation_fee.amount.u128()
-        };
-
-    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    if num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
+        let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
+        checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    }
 
     let mut base_token_uri = uri.trim().to_string();
     // Check that base_token_uri is a valid IPFS uri
@@ -591,7 +584,12 @@ pub fn execute_set_token_uri(
     }
     base_token_uri = parsed_token_uri.to_string();
 
-    BASE_TOKEN_ID.save(deps.storage, &acc_mintable_num_tokens)?;
+    let base_token_id = BASE_TOKEN_ID.load(deps.storage)?;
+    let minted_num_tokens = MINTED_NUM_TOKENS.load(deps.storage)?;
+    BASE_TOKEN_ID.save(
+        deps.storage,
+        &(base_token_id + config.extension.num_tokens - minted_num_tokens),
+    )?;
 
     // Remove the old mintable tokens ids map
     let keys = MINTABLE_TOKEN_IDS

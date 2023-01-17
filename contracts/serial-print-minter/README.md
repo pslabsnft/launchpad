@@ -12,11 +12,9 @@ A minter that best works for generated art collections. It's designed for collec
 
   at appending a new uri
 
-      acc = accumulated mintable num_tokens
+      if num_tokens > 10k, creation_fee = num_tokens * creation_fee_per_token(stars)
 
-      if num_tokens > acc, creation_fee = num_tokens * creation_fee_per_token(stars)
-
-      if num_tokens <= acc, creation_fee = 1k(stars)
+      if num_tokens <=10k, creation_fee = 0(stars)
 
 - Appending a new uri 
 

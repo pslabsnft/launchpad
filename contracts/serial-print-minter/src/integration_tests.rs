@@ -2118,7 +2118,7 @@ fn set_token_uri() {
 
     // round2
     let num_tokens = 100;
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
 
     // Set new token uri fail, invalid uri
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
@@ -2177,7 +2177,7 @@ fn set_token_uri() {
 
     // round3
     let num_tokens = 10;
-    let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
+    let creation_fee = coins(CREATION_FEE_PER_TOKEN * num_tokens as u128, NATIVE_DENOM);
     // Set new token uri with uri, num_tokens: 10
     let set_token_uri_msg_2 = ExecuteMsg::SetTokenUri {
         uri: COLLECTION3_URI.to_string(),
@@ -2437,7 +2437,7 @@ fn dynamic_fee_for_instantiate() {
 #[test]
 fn dynamic_fee_for_set_new_uri() {
     let mut router = custom_mock_app();
-    let num_tokens = 90_000;
+    let num_tokens = 100;
     let (creator, _buyer) = setup_accounts(&mut router, num_tokens);
 
     let (minter_addr, _config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
@@ -2457,8 +2457,7 @@ fn dynamic_fee_for_set_new_uri() {
 
     assert!(res.is_err());
 
-    // Success with the creation_fee = 1k Stars
-    let num_tokens = 1_000;
+    // Success with the creation_fee = 0
     let set_token_uri_msg = ExecuteMsg::SetTokenUri {
         uri: COLLECTION1_URI.to_string(),
         num_tokens,
@@ -2467,7 +2466,7 @@ fn dynamic_fee_for_set_new_uri() {
         creator.clone(),
         minter_addr.clone(),
         &set_token_uri_msg,
-        &coins(CREATION_FEE, NATIVE_DENOM),
+        &[],
     );
     assert!(res.is_ok());
 
