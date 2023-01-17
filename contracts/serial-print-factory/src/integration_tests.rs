@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::msg::{InstantiateMsg, VendingMinterCreateMsg};
+    use crate::msg::InstantiateMsg;
     use crate::state::ParamsExtension;
     use crate::{helpers::FactoryContract, state::VendingMinterParams};
     use cosmwasm_std::{coin, Addr};
@@ -22,6 +22,7 @@ mod tests {
     const NATIVE_DENOM: &str = "ustars";
 
     pub const CREATION_FEE: u128 = 0;
+    pub const DYNAMIC_CREATION_FEE_THRESHOLD: u32 = 10_000;
     pub const CREATION_FEE_PER_TOKEN: u128 = 10_000;
     pub const MIN_MINT_PRICE: u128 = 50_000_000;
     pub const AIRDROP_MINT_PRICE: u128 = 15_000_000;
@@ -41,6 +42,7 @@ mod tests {
             mint_fee_bps: MINT_FEE_BPS,
             max_trading_offset_secs: 60 * 60 * 24 * 7,
             extension: ParamsExtension {
+                dynamic_creation_fee_threshold: DYNAMIC_CREATION_FEE_THRESHOLD,
                 creation_fee_per_token: CREATION_FEE_PER_TOKEN,
                 max_per_address_limit: MAX_PER_ADDRESS_LIMIT,
                 airdrop_mint_price: coin(AIRDROP_MINT_PRICE, NATIVE_DENOM),

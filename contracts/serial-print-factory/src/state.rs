@@ -5,6 +5,7 @@ use sg2::MinterParams;
 /// Parameters common to all vending minters, as determined by governance
 #[cw_serde]
 pub struct ParamsExtension {
+    pub dynamic_creation_fee_threshold: u32,
     pub creation_fee_per_token: u128,
     pub max_per_address_limit: u32,
     pub airdrop_mint_price: Coin,

@@ -5,7 +5,7 @@ use crate::msg::{
 };
 use crate::state::{
     Config, ConfigExtension, BASE_TOKEN_ID, CONFIG, MINTABLE_NUM_TOKENS, MINTABLE_TOKEN_IDS,
-    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS, STATUS,
+    MINTED_NUM_TOKENS, MINTER_ADDRS, MINTING_PAUSED, SG721_ADDRESS, STATUS, ACC_NUM_TOKENS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -177,6 +177,8 @@ pub fn instantiate(
 
     BASE_TOKEN_ID.save(deps.storage, &0)?;
     MINTED_NUM_TOKENS.save(deps.storage, &0)?;
+    ACC_NUM_TOKENS.save(deps.storage, &msg.init_msg.num_tokens)?;
+
     MINTING_PAUSED.save(deps.storage, &false)?;
 
     Ok(Response::new()
@@ -300,6 +302,12 @@ pub fn execute_mint_sender(
     let config = CONFIG.load(deps.storage)?;
     let action = "mint_sender";
 
+    // Check mintable
+    let minting_paused = MINTING_PAUSED.load(deps.storage)?;
+    if minting_paused == true {
+        return Err(ContractError::MintingPaused {});
+    }
+    
     // If there is no active whitelist right now, check public mint
     // Check if after start_time
     if is_public_mint(deps.as_ref(), &info)? && (env.block.time < config.extension.start_time) {
@@ -418,11 +426,6 @@ fn _execute_mint(
     recipient: Option<Addr>,
     token_id: Option<u32>,
 ) -> Result<Response, ContractError> {
-    // Check mintable
-    let minting_paused = MINTING_PAUSED.load(deps.storage)?;
-    if minting_paused == true {
-        return Err(ContractError::MintingPaused {});
-    }
 
     let mintable_num_tokens = MINTABLE_NUM_TOKENS.load(deps.storage)?;
     if mintable_num_tokens == 0 {
@@ -559,6 +562,10 @@ pub fn execute_set_token_uri(
         ));
     }
 
+    if num_tokens == 0 {
+        return Err(ContractError::InvalidNumTokens {});
+    }
+
     // Calcuate the creation fee for num_tokens and fair burn
     let mut res = Response::new();
     let factory: ParamsResponse = deps
@@ -566,12 +573,18 @@ pub fn execute_set_token_uri(
         .query_wasm_smart(config.factory.clone(), &Sg2QueryMsg::Params {})?;
     let factory_params = factory.params;
 
-    let creation_fee = factory_params.extension.creation_fee_per_token * (num_tokens as u128);
-    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    let mut acc_num_tokens = ACC_NUM_TOKENS.load(deps.storage)?;
+    let creation_fee: u128 =
+        if acc_num_tokens > factory_params.extension.dynamic_creation_fee_threshold {
+            factory_params.extension.creation_fee_per_token * (num_tokens as u128)
+        } else {
+            factory_params.creation_fee.amount.u128()
+        };
 
-    if num_tokens == 0 {
-        return Err(ContractError::InvalidNumTokens { })
-    }
+    checked_fair_burn(&info, creation_fee, None, &mut res)?;
+    
+    acc_num_tokens += num_tokens;
+    ACC_NUM_TOKENS.save(deps.storage, &acc_num_tokens)?;
 
     let mut base_token_uri = uri.trim().to_string();
     // Check that base_token_uri is a valid IPFS uri
@@ -611,10 +624,11 @@ pub fn execute_set_token_uri(
     MINTABLE_NUM_TOKENS.save(deps.storage, &num_tokens)?;
     MINTED_NUM_TOKENS.save(deps.storage, &minted_num_tokens)?;
 
-    Ok(res
-        .add_attribute("action", "set new uri")
-        .add_attribute("num_token", num_tokens.to_string())
-        .add_attribute("creation_fee", creation_fee.to_string()))
+    let event = Event::new("set-new-uri")
+        .add_attribute("sender", info.sender)
+        .add_attribute("num_tokens", num_tokens.to_string());
+
+    Ok(res.add_event(event))
 }
 
 pub fn execute_set_minting_pause(
